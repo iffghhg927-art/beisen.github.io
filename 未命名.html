@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>快速建模工具 - 卡片分类胜任力模型</title>
+    <style>
+        /* 全局重置 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft YaHei", "微软雅黑", Arial, sans-serif;
+        }
+
+        body {
+            background-color: #ffffff;
+            color: #333333;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 顶部标题栏 */
+        .header {
+            text-align: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #e0e0e0;
+            margin-bottom: 5px;
+        }
+
+        .header h1 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 3px;
+        }
+
+        .header p {
+            font-size: 12px;
+            color: #666666;
+        }
+
+        /* 主容器 */
+        .main-container {
+            display: flex;
+            flex: 1;
+            padding: 0 10px;
+            gap: 10px;
+            height: calc(100vh - 60px);
+        }
+
+        /* 左侧面板 */
+        .left-panel {
+            width: 220px;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #e0e0e0;
+            border-radius: 2px;
+            background-color: #ffffff;
+        }
+
+        /* 搜索和筛选区 */
+        .search-filter {
+            padding: 8px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        #search-input {
+            width: 100%;
+            padding: 6px 8px;
+            border: 1px solid #e0e0e0;
+            border-radius: 2px;
+            font-size: 12px;
+            margin-bottom: 6px;
+            outline: none;
+        }
+
+        #category-select {
+            width: 100%;
+            padding: 6px 8px;
+            border: 1px solid #e0e0e0;
+            border-radius: 2px;
+            font-size: 12px;
+            outline: none;
+            background-color: #ffffff;
+        }
+
+        /* 左侧卡片列表 */
+        .card-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 5px;
+        }
+
+        .source-card {
+            padding: 8px 6px;
+            margin-bottom: 4px;
+            border-radius: 2px;
+            cursor: grab;
+            font-size: 12px;
+            user-select: none;
+            border: 1px solid #d0d0d0;
+        }
+
+        /* 不同分类卡片的背景色（匹配原图） */
+        .source-card.type1 {
+            background-color: #e8f4f8; /* 浅蓝 */
+        }
+        .source-card.type2 {
+            background-color: #fff3e0; /* 浅黄 */
+        }
+        .source-card.type3 {
+            background-color: #f3e5f5; /* 浅紫 */
+        }
+        .source-card.type4 {
+            background-color: #e8f5e8; /* 浅绿 */
+        }
+
+        .source-card:hover {
+            background-color: #f0f0f0;
+        }
+
+        /* 右侧工作区 */
+        .right-workspace {
+            flex: 1;
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding-bottom: 10px;
+        }
+
+        /* 列容器 */
+        .column {
+            min-width: 200px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            border: 1px dashed #cccccc;
+            border-radius: 2px;
+        }
+
+        /* 列标题栏 */
+        .column-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 8px;
+            background-color: #f9f9f9;
+            border-bottom: 1px dashed #cccccc;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .column-title {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .column-count {
+            color: #666;
+        }
+
+        .column-close {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background-color: #ff5252;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+
+        .column-close:hover {
+            background-color: #ff1744;
+        }
+
+        /* 列内容区 */
+        .column-content {
+            flex: 1;
+            padding: 8px;
+            overflow-y: auto;
+            background-color: #ffffff;
+        }
+
+        /* 已分类的卡片样式 */
+        .dropped-card {
+            padding: 8px 6px;
+            margin-bottom: 4px;
+            border-radius: 2px;
+            background-color: #ffffff;
+            border: 1px solid #d0d0d0;
+            font-size: 12px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .dropped-card:hover {
+            background-color: #ffebee;
+        }
+
+        /* 底部按钮区 */
+        .button-area {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 10px;
+            margin-top: 5px;
+        }
+
+        /* 按钮样式（匹配原图） */
+        #add-column-btn {
+            padding: 6px 12px;
+            background-color: #2196f3;
+            color: white;
+            border: none;
+            border-radius: 2px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        #add-column-btn:hover {
+            background-color: #1976d2;
+        }
+
+        #export-excel-btn {
+            padding: 6px 12px;
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 2px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        #export-excel-btn:hover {
+            background-color: #388e3c;
+        }
+
+        /* 滚动条样式优化 */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background-color: #cccccc;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶部标题 -->
+    <div class="header">
+        <h1>快速建模工具 - 卡片分类胜任力模型</h1>
+        <p>使用拖拽方式进行卡片分类，点击已分类卡片可删除，ctrl+鼠标点击卡片可以查看词条说明</p>
+    </div>
+
+    <!-- 主容器 -->
+    <div class="main-container">
+        <!-- 左侧面板 -->
+        <div class="left-panel">
+            <!-- 搜索和筛选 -->
+            <div class="search-filter">
+                <input type="text" id="search-input" placeholder="搜索胜任力词条...">
+                <select id="category-select">
+                    <option value="all">所有分类</option>
+                    <option value="change">变革创新</option>
+                    <option value="problem">解决问题</option>
+                    <option value="communication">沟通协作</option>
+                    <option value="management">运营管理</option>
+                </select>
+            </div>
+
+            <!-- 左侧卡片列表 -->
+            <div class="card-list" id="source-card-list">
+                <!-- 动态生成的卡片 -->
+            </div>
+        </div>
+
+        <!-- 右侧工作区 -->
+        <div class="right-workspace" id="workspace">
+            <!-- 动态生成的列 -->
+        </div>
+    </div>
+
+    <!-- 底部按钮 -->
+    <div class="button-area">
+        <button id="add-column-btn">添加格子</button>
+        <button id="export-excel-btn">导出Excel</button>
+    </div>
+
+    <script>
+        // 1. 初始化数据
+        // 胜任力卡片数据（匹配图片中的内容）
+        const competencyData = [
+            { id: 1, name: "A变革创新\n变革意识", type: 1 },
+            { id: 2, name: "A变革创新\n变革引导", type: 1 },
+            { id: 3, name: "A变革创新\n持续改善", type: 1 },
+            { id: 4, name: "A变革创新\n创新能力", type: 1 },
+            { id: 5, name: "A变革创新\n开创业务", type: 1 },
+            { id: 6, name: "A变革创新\n魄力", type: 1 },
+            { id: 7, name: "A变革创新\n突破性思维", type: 1 },
+            { id: 8, name: "A解决问题\n分析判断", type: 2 },
+            { id: 9, name: "A解决问题\n关注细节", type: 2 },
+            { id: 10, name: "A解决问题\n问题解决", type: 2 },
+            { id: 11, name: "A沟通协作\n有效表达", type: 3 },
+            { id: 12, name: "A沟通协作\n倾听", type: 3 },
+            { id: 13, name: "A运营管理\n计划制定", type: 4 },
+            { id: 14, name: "A运营管理\n资源配置", type: 4 }
+        ];
+
+        // 初始列数据（匹配图片中的列）
+        const initialColumns = [
+            { id: 1, title: "E不确定", count: 1 },
+            { id: 2, title: "D帮助不大", count: 2 },
+            { id: 3, title: "C有了更好", count: 3 },
+            { id: 4, title: "B重要", count: 4 },
+            { id: 5, title: "A必要", count: 5 }
+        ];
+
+        // 2. DOM元素
+        const sourceCardList = document.getElementById('source-card-list');
+        const workspace = document.getElementById('workspace');
+        const addColumnBtn = document.getElementById('add-column-btn');
+        const exportExcelBtn = document.getElementById('export-excel-btn');
+        const searchInput = document.getElementById('search-input');
+        const categorySelect = document.getElementById('category-select');
+
+        // 3. 初始化函数
+        function init() {
+            // 渲染左侧卡片
+            renderSourceCards(competencyData);
+            // 渲染初始列
+            renderColumns(initialColumns);
+            // 绑定事件
+            bindEvents();
+        }
+
+        // 4. 渲染左侧卡片
+        function renderSourceCards(cards) {
+            sourceCardList.innerHTML = '';
+            cards.forEach(card => {
+                const cardElement = document.createElement('div');
+                cardElement.className = `source-card type${card.type}`;
+                cardElement.dataset.id = card.id;
+                cardElement.draggable = true;
+                cardElement.textContent = card.name.replace(/\n/g, ' '); // 替换换行为空格
+                sourceCardList.appendChild(cardElement);
+            });
+        }
+
+        // 5. 渲染列
+        function renderColumns(columns) {
+            workspace.innerHTML = '';
+            columns.forEach(column => {
+                // 创建列容器
+                const columnElement = document.createElement('div');
+                columnElement.className = 'column';
+                columnElement.dataset.id = column.id;
+
+                // 列标题
+                const columnHeader = document.createElement('div');
+                columnHeader.className = 'column-header';
+                columnHeader.innerHTML = `
+                    <div class="column-title">
+                        ${column.title} <span class="column-count">${column.count}</span>
+                    </div>
+                    <button class="column-close">×</button>
+                `;
+
+                // 列内容区
+                const columnContent = document.createElement('div');
+                columnContent.className = 'column-content';
+
+                // 组装列
+                columnElement.appendChild(columnHeader);
+                columnElement.appendChild(columnContent);
+                workspace.appendChild(columnElement);
+            });
+        }
+
+        // 6. 绑定所有事件
+        function bindEvents() {
+            // 6.1 拖拽事件 - 开始拖拽
+            sourceCardList.addEventListener('dragstart', (e) => {
+                if (e.target.classList.contains('source-card')) {
+                    e.dataTransfer.setData('text/plain', e.target.dataset.id);
+                    e.target.style.opacity = '0.7';
+                }
+            });
+
+            // 6.2 拖拽事件 - 结束拖拽
+            sourceCardList.addEventListener('dragend', (e) => {
+                if (e.target.classList.contains('source-card')) {
+                    e.target.style.opacity = '1';
+                }
+            });
+
+            // 6.3 拖拽事件 - 允许放置
+            workspace.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                // 高亮放置区域
+                if (e.target.classList.contains('column-content')) {
+                    e.target.style.backgroundColor = '#f5f5f5';
+                }
+            });
+
+            // 6.4 拖拽事件 - 离开放置区域
+            workspace.addEventListener('dragleave', (e) => {
+                if (e.target.classList.contains('column-content')) {
+                    e.target.style.backgroundColor = '#ffffff';
+                }
+            });
+
+            // 6.5 拖拽事件 - 放置卡片
+            workspace.addEventListener('drop', (e) => {
+                e.preventDefault();
+                // 恢复背景色
+                if (e.target.classList.contains('column-content')) {
+                    e.target.style.backgroundColor = '#ffffff';
+                }
+
+                // 获取拖拽的卡片ID和目标列
+                const cardId = e.dataTransfer.getData('text/plain');
+                const targetColumnContent = e.target.closest('.column-content');
+                const targetColumn = e.target.closest('.column');
+
+                if (cardId && targetColumnContent && targetColumn) {
+                    // 找到对应的原始卡片
+                    const cardData = competencyData.find(item => item.id == cardId);
+                    if (cardData) {
+                        // 创建已分类卡片
+                        const droppedCard = document.createElement('div');
+                        droppedCard.className = 'dropped-card';
+                        droppedCard.dataset.id = cardData.id;
+                        droppedCard.textContent = cardData.name.replace(/\n/g, ' ');
+
+                        // 添加到目标列
+                        targetColumnContent.appendChild(droppedCard);
+
+                        // 更新列计数
+                        updateColumnCount(targetColumn);
+                    }
+                }
+            });
+
+            // 6.6 点击已分类卡片删除
+            workspace.addEventListener('click', (e) => {
+                if (e.target.classList.contains('dropped-card')) {
+                    const column = e.target.closest('.column');
+                    e.target.remove();
+                    // 更新列计数
+                    updateColumnCount(column);
+                }
+            });
+
+            // 6.7 删除列按钮
+            workspace.addEventListener('click', (e) => {
+                if (e.target.classList.contains('column-close')) {
+                    const column = e.target.closest('.column');
+                    // 至少保留一列
+                    if (workspace.children.length > 1) {
+                        column.remove();
+                    } else {
+                        alert('至少需要保留一列！');
+                    }
+                }
+            });
+
+            // 6.8 添加列按钮
+            addColumnBtn.addEventListener('click', () => {
+                const newColumnId = Date.now(); // 用时间戳作为唯一ID
+                const newColumnTitle = `新列 ${workspace.children.length + 1}`;
+                
+                // 创建新列
+                const newColumn = document.createElement('div');
+                newColumn.className = 'column';
+                newColumn.dataset.id = newColumnId;
+                newColumn.innerHTML = `
+                    <div class="column-header">
+                        <div class="column-title">
+                            ${newColumnTitle} <span class="column-count">0</span>
+                        </div>
+                        <button class="column-close">×</button>
+                    </div>
+                    <div class="column-content"></div>
+                `;
+
+                workspace.appendChild(newColumn);
+            });
+
+            // 6.9 导出Excel按钮（模拟）
+            exportExcelBtn.addEventListener('click', () => {
+                alert('Excel导出功能已触发！实际项目中可集成SheetJS等库实现真实导出。');
+                // 收集数据示例
+                const exportData = [];
+                document.querySelectorAll('.column').forEach(column => {
+                    const columnTitle = column.querySelector('.column-title').textContent.trim();
+                    const cards = [];
+                    column.querySelectorAll('.dropped-card').forEach(card => {
+                        cards.push(card.textContent.trim());
+                    });
+                    exportData.push({
+                        column: columnTitle,
+                        cards: cards
+                    });
+                });
+                console.log('导出数据：', exportData);
+            });
+
+            // 6.10 搜索功能
+            searchInput.addEventListener('input', () => {
+                const searchText = searchInput.value.toLowerCase().trim();
+                if (!searchText) {
+                    renderSourceCards(competencyData);
+                    return;
+                }
+                const filteredCards = competencyData.filter(card => 
+                    card.name.toLowerCase().includes(searchText)
+                );
+                renderSourceCards(filteredCards);
+            });
+
+            // 6.11 分类筛选
+            categorySelect.addEventListener('change', () => {
+                const selectedCategory = categorySelect.value;
+                if (selectedCategory === 'all') {
+                    renderSourceCards(competencyData);
+                    return;
+                }
+                
+                // 根据分类筛选（简化版，实际可扩展完整分类逻辑）
+                let filteredCards = [];
+                if (selectedCategory === 'change') {
+                    filteredCards = competencyData.filter(card => card.name.includes('变革创新'));
+                } else if (selectedCategory === 'problem') {
+                    filteredCards = competencyData.filter(card => card.name.includes('解决问题'));
+                } else if (selectedCategory === 'communication') {
+                    filteredCards = competencyData.filter(card => card.name.includes('沟通协作'));
+                } else if (selectedCategory === 'management') {
+                    filteredCards = competencyData.filter(card => card.name.includes('运营管理'));
+                }
+                renderSourceCards(filteredCards);
+            });
+        }
+
+        // 7. 更新列计数
+        function updateColumnCount(column) {
+            const columnContent = column.querySelector('.column-content');
+            const cardCount = columnContent.children.length;
+            const columnCountElement = column.querySelector('.column-count');
+            columnCountElement.textContent = cardCount;
+        }
+
+        // 8. 启动初始化
+        init();
+    </script>
+</body>
+</html>
